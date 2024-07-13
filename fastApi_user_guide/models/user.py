@@ -1,8 +1,18 @@
-from pydantic import BaseModel
+from typing import List
+from pydantic import BaseModel, ConfigDict
+
 
 class User(BaseModel):
-    first_name:str | None = ""
-    last_name:str | None = ""
-    username:str
+    
+    model_config = ConfigDict(from_attributes=True)
+    
+    name:str | None = ""
     email:str
     
+
+
+class UserProducts(User):
+    products:List["Product"]
+    
+from .product import Product
+User.model_rebuild()
