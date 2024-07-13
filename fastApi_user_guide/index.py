@@ -1,4 +1,5 @@
 from fastapi import Body, Depends, Path
+from fastapi.security import OAuth2PasswordBearer
 from fastApi_user_guide.models.user import User, UserProducts
 from typing import Annotated, List
 from fastApi_user_guide.models.product import Product, Product2, UpdateProduct, DeleteProduct
@@ -8,17 +9,18 @@ import fastApi_user_guide.database as database
 from .database.models.product import Product as DProduct
 from .database.models.user import User as DUser
 from sqlalchemy.orm import Session
-from .functions import login_user
+from .functions import login_user, verify_token, generate_token
+from passlib.context import CryptContext
+from .models.token import Token
 
-
-
-
-
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+password_context = CryptContext(schemes=["bcrypt"])
 
 db = Depends(get_database)
 
 
 logged_user = Annotated[User, Depends(login_user)]
+ 
 
 @app.get("/users", response_model=List[UserProducts])
 def get_users(user:Annotated[User, Depends(login_user)], db:Session = db ):
@@ -54,7 +56,9 @@ def get_user(user_id:Annotated[int, Path(title="user id")], db:Session = db, ):
 
 @app.get("/")
 @app.get("/products", response_model=list[Product])
-def products(user:logged_user,db:Session = db):
+def products(token:Annotated[OAuth2PasswordBearer, Depends(oauth2_scheme)],db:Session = db):
+    
+    user = verify_token(token)
     products = db.query(DProduct).all()
 
     return list(products)
@@ -124,6 +128,7 @@ def delete_product(product:DeleteProduct = ..., db:Session = db):
         return {"message": "product deleted successfully"}
     else:
         return {"message": "product not found"}
+
 
 
 
