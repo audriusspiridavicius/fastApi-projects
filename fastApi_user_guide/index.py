@@ -8,9 +8,26 @@ import fastApi_user_guide.database as database
 from .database.models.product import Product as DProduct
 from .database.models.user import User as DUser
 from sqlalchemy.orm import Session
+from .functions import login_user
+
+
+
+
 
 
 db = Depends(get_database)
+
+
+logged_user = Annotated[User, Depends(login_user)]
+
+@app.get("/users", response_model=List[UserProducts])
+def get_users(user:Annotated[User, Depends(login_user)], db:Session = db ):
+
+        users = database.get_users(db)
+        users=[UserProducts.model_validate(user) for user in users]
+    
+        return users
+
 
 @app.put("/users")
 def get_users(user:Annotated[User,Body()] = ..., db:Session = db):
@@ -28,16 +45,6 @@ def get_users(user:Annotated[User,Body()] = ..., db:Session = db):
 def get_users(user:Annotated[User,Body()] = ...):
     return user
 
-
-@app.get("/users", response_model=List[UserProducts])
-def get_users(db:Session = db):
-   
-    users = database.get_users(db)
-    users=[UserProducts.model_validate(user) for user in users]
-   
-    return users
-
-
 @app.get("/users/{user_id}", response_model=UserProducts)
 def get_user(user_id:Annotated[int, Path(title="user id")], db:Session = db, ):
    
@@ -47,7 +54,7 @@ def get_user(user_id:Annotated[int, Path(title="user id")], db:Session = db, ):
 
 @app.get("/")
 @app.get("/products", response_model=list[Product])
-def products(db:Session = db):
+def products(user:logged_user,db:Session = db):
     products = db.query(DProduct).all()
 
     return list(products)

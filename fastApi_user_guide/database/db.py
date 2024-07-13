@@ -16,8 +16,5 @@ def get_database():
 
     try:
         yield db
-    except Exception as e:
-        print(e)
-        raise Exception(f"something went wrong with database connnection! Please try again or contact support team.{e}")
     finally:
         db.close()
