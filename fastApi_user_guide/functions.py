@@ -1,5 +1,4 @@
 from typing import Annotated
-
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBasicCredentials, HTTPBasic
 from .database.models.user import User as DUser
@@ -8,6 +7,7 @@ from .models.user import User
 from sqlalchemy.orm import Session
 import datetime
 import jwt
+from jwt.exceptions import InvalidTokenError
 from datetime import timedelta, timezone
 from .models.token import Token
 
@@ -44,3 +44,17 @@ def generate_token(data, expires:timedelta = ACCESS_TOKEN_EXPIRE_MINUTES) -> Tok
     
     return Token(access_token=token, refresh_token=refresh)
 
+def verify_token(token:str):
+    
+    try:
+        data = jwt.decode(token, SECRET_KEY, algorithms=ALGORITHM)
+        user = User(**data["data"])
+        return user
+    except InvalidTokenError:
+        
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+       
