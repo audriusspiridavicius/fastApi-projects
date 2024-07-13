@@ -124,4 +124,12 @@ def delete_product(product:DeleteProduct = ..., db:Session = db):
         return {"message": "product deleted successfully"}
     else:
         return {"message": "product not found"}
+
+
+
+@app.post("/login", response_model=Token)
+def login(user:Annotated[User,Depends(login_user)]) -> Token:
     
+    token = generate_token(user.model_dump(),1)
+    
+    return token
